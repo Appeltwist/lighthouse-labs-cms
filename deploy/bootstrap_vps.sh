@@ -44,15 +44,9 @@ END
 \$\$;
 SQL
 
-sudo -u postgres psql <<SQL
-DO \$\$
-BEGIN
-   IF NOT EXISTS (SELECT FROM pg_database WHERE datname = '${POSTGRES_DB}') THEN
-      CREATE DATABASE ${POSTGRES_DB} OWNER ${POSTGRES_USER};
-   END IF;
-END
-\$\$;
-SQL
+if ! sudo -u postgres psql -Atqc "SELECT 1 FROM pg_database WHERE datname = '${POSTGRES_DB}'" | grep -q 1; then
+  sudo -u postgres createdb --owner="${POSTGRES_USER}" "${POSTGRES_DB}"
+fi
 
 echo "Bootstrap complete."
 echo "Next:"

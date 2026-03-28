@@ -6,6 +6,12 @@ VENV_DIR="${VENV_DIR:-${APP_DIR}/.venv}"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 BRANCH="${BRANCH:-main}"
 
+if [[ "${EUID}" -eq 0 ]]; then
+  SYSTEMCTL_BIN="systemctl"
+else
+  SYSTEMCTL_BIN="sudo systemctl"
+fi
+
 cd "${APP_DIR}"
 
 if [[ ! -d .git ]]; then
@@ -28,7 +34,7 @@ pip install -r requirements.txt
 python manage.py migrate --noinput
 python manage.py collectstatic --noinput
 
-sudo systemctl restart lighthouse-labs-cms
-sudo systemctl reload nginx
+${SYSTEMCTL_BIN} restart lighthouse-labs-cms
+${SYSTEMCTL_BIN} reload nginx
 
 echo "Deployment complete."
