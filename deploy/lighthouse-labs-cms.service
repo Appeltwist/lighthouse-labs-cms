@@ -1,0 +1,21 @@
+[Unit]
+Description=Lighthouse Labs CMS Gunicorn service
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=lighthouse
+Group=lighthouse
+WorkingDirectory=/srv/lighthouse-labs-cms
+EnvironmentFile=/srv/lighthouse-labs-cms/.env
+ExecStart=/srv/lighthouse-labs-cms/.venv/bin/gunicorn \
+  --workers 3 \
+  --bind 127.0.0.1:8001 \
+  --access-logfile /var/log/lighthouse-labs-cms/access.log \
+  --error-logfile /var/log/lighthouse-labs-cms/error.log \
+  lighthouse_labs.wsgi:application
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -2,12 +2,12 @@ from django.db import models
 from wagtail import blocks
 from wagtail.admin.panels import FieldPanel, MultiFieldPanel
 from wagtail.contrib.settings.models import BaseSiteSetting, register_setting
-from wagtail.fields import RichTextField, StreamField
+from wagtail.fields import StreamField
 from wagtail.images import get_image_model_string
 
 
 def default_locales():
-    return ["en", "fr"]
+    return ["fr", "en"]
 
 
 NAV_ITEM_BLOCKS = [
@@ -15,8 +15,8 @@ NAV_ITEM_BLOCKS = [
         "item",
         blocks.StructBlock(
             [
-                ("label_en", blocks.CharBlock()),
-                ("label_fr", blocks.CharBlock()),
+                ("label", blocks.CharBlock()),
+                ("label_fr", blocks.CharBlock(required=False)),
                 ("href", blocks.CharBlock()),
                 ("open_in_new_tab", blocks.BooleanBlock(required=False, default=False)),
             ]
@@ -25,20 +25,20 @@ NAV_ITEM_BLOCKS = [
 ]
 
 
-FOOTER_GROUP_BLOCKS = [
+FOOTER_COLUMN_BLOCKS = [
     (
-        "group",
+        "column",
         blocks.StructBlock(
             [
-                ("title_en", blocks.CharBlock()),
-                ("title_fr", blocks.CharBlock()),
+                ("title", blocks.CharBlock()),
+                ("title_fr", blocks.CharBlock(required=False)),
                 (
                     "links",
                     blocks.ListBlock(
                         blocks.StructBlock(
                             [
-                                ("label_en", blocks.CharBlock()),
-                                ("label_fr", blocks.CharBlock()),
+                                ("label", blocks.CharBlock()),
+                                ("label_fr", blocks.CharBlock(required=False)),
                                 ("href", blocks.CharBlock()),
                                 ("open_in_new_tab", blocks.BooleanBlock(required=False, default=False)),
                             ]
@@ -51,41 +51,25 @@ FOOTER_GROUP_BLOCKS = [
 ]
 
 
-SOCIAL_LINK_BLOCKS = [
-    (
-        "link",
-        blocks.StructBlock(
-            [
-                ("label", blocks.CharBlock()),
-                ("url", blocks.URLBlock()),
-            ]
-        ),
-    ),
-]
-
-
 @register_setting
 class BrandSettings(BaseSiteSetting):
-    site_slug = models.SlugField(max_length=80, default="lighthouse-labs")
-    default_locale = models.CharField(max_length=2, default="en")
+    site_name = models.CharField(max_length=255, default="Lighthouse Labs")
+    default_locale = models.CharField(max_length=2, default="fr")
     supported_locales = models.JSONField(default=default_locales, blank=True)
-    color_primary = models.CharField(max_length=20, default="#1d2a44")
-    color_secondary = models.CharField(max_length=20, default="#6a1f2b")
-    color_accent = models.CharField(max_length=20, default="#d9b26f")
-    background_color = models.CharField(max_length=20, default="#f4efe7")
-    font_family_token = models.CharField(max_length=255, default="Iowan Old Style, Georgia, serif")
-    logo_image = models.ForeignKey(
+    logo = models.ForeignKey(
         get_image_model_string(),
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
         related_name="+",
     )
+    primary_color = models.CharField(max_length=20, default="#1d2a44")
+    secondary_color = models.CharField(max_length=20, default="#b85c38")
 
     panels = [
         MultiFieldPanel(
             [
-                FieldPanel("site_slug"),
+                FieldPanel("site_name"),
                 FieldPanel("default_locale"),
                 FieldPanel("supported_locales"),
             ],
@@ -93,12 +77,9 @@ class BrandSettings(BaseSiteSetting):
         ),
         MultiFieldPanel(
             [
-                FieldPanel("color_primary"),
-                FieldPanel("color_secondary"),
-                FieldPanel("color_accent"),
-                FieldPanel("background_color"),
-                FieldPanel("font_family_token"),
-                FieldPanel("logo_image"),
+                FieldPanel("logo"),
+                FieldPanel("primary_color"),
+                FieldPanel("secondary_color"),
             ],
             heading="Brand",
         ),
@@ -107,51 +88,61 @@ class BrandSettings(BaseSiteSetting):
 
 @register_setting
 class SiteChromeSettings(BaseSiteSetting):
-    primary_nav = StreamField(NAV_ITEM_BLOCKS, blank=True, default=list, use_json_field=True)
-    footer_groups = StreamField(FOOTER_GROUP_BLOCKS, blank=True, default=list, use_json_field=True)
-    social_links = StreamField(SOCIAL_LINK_BLOCKS, blank=True, default=list, use_json_field=True)
-    contact_heading_en = models.CharField(max_length=255, blank=True)
-    contact_heading_fr = models.CharField(max_length=255, blank=True)
-    contact_body_en = RichTextField(blank=True)
-    contact_body_fr = RichTextField(blank=True)
-    contact_email = models.EmailField(blank=True)
-    announcement_label_en = models.CharField(max_length=255, blank=True)
-    announcement_label_fr = models.CharField(max_length=255, blank=True)
-    announcement_body_en = models.CharField(max_length=255, blank=True)
-    announcement_body_fr = models.CharField(max_length=255, blank=True)
-    announcement_link_label_en = models.CharField(max_length=255, blank=True)
+    nav_items = StreamField(NAV_ITEM_BLOCKS, blank=True, default=list, use_json_field=True)
+    footer_columns = StreamField(FOOTER_COLUMN_BLOCKS, blank=True, default=list, use_json_field=True)
+    announcement_text = models.CharField(max_length=255, blank=True)
+    announcement_text_fr = models.CharField(max_length=255, blank=True)
+    announcement_link_label = models.CharField(max_length=255, blank=True)
     announcement_link_label_fr = models.CharField(max_length=255, blank=True)
-    announcement_link_url = models.CharField(max_length=255, blank=True)
+    announcement_link = models.CharField(max_length=255, blank=True)
 
     panels = [
         MultiFieldPanel(
             [
-                FieldPanel("primary_nav"),
-                FieldPanel("footer_groups"),
-                FieldPanel("social_links"),
+                FieldPanel("nav_items"),
+                FieldPanel("footer_columns"),
             ],
-            heading="Navigation",
+            heading="Navigation and footer",
         ),
         MultiFieldPanel(
             [
-                FieldPanel("contact_heading_en"),
-                FieldPanel("contact_heading_fr"),
-                FieldPanel("contact_body_en"),
-                FieldPanel("contact_body_fr"),
-                FieldPanel("contact_email"),
-            ],
-            heading="Footer contact",
-        ),
-        MultiFieldPanel(
-            [
-                FieldPanel("announcement_label_en"),
-                FieldPanel("announcement_label_fr"),
-                FieldPanel("announcement_body_en"),
-                FieldPanel("announcement_body_fr"),
-                FieldPanel("announcement_link_label_en"),
+                FieldPanel("announcement_text"),
+                FieldPanel("announcement_text_fr"),
+                FieldPanel("announcement_link_label"),
                 FieldPanel("announcement_link_label_fr"),
-                FieldPanel("announcement_link_url"),
+                FieldPanel("announcement_link"),
             ],
-            heading="Announcement",
+            heading="Announcement bar",
+        ),
+    ]
+
+
+@register_setting
+class ContactSettings(BaseSiteSetting):
+    email = models.EmailField(blank=True)
+    phone = models.CharField(max_length=255, blank=True)
+    address = models.TextField(blank=True)
+    google_maps_link = models.URLField(blank=True)
+    instagram = models.URLField(blank=True)
+    vimeo = models.URLField(blank=True)
+    linkedin = models.URLField(blank=True)
+
+    panels = [
+        MultiFieldPanel(
+            [
+                FieldPanel("email"),
+                FieldPanel("phone"),
+                FieldPanel("address"),
+                FieldPanel("google_maps_link"),
+            ],
+            heading="Primary contact",
+        ),
+        MultiFieldPanel(
+            [
+                FieldPanel("instagram"),
+                FieldPanel("vimeo"),
+                FieldPanel("linkedin"),
+            ],
+            heading="Social links",
         ),
     ]

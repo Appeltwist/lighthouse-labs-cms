@@ -45,3 +45,52 @@ Lighthouse Labs CMS is a foundation starter for a bilingual cinema and film webs
 - Wagtail admin: `http://localhost:8000/cms/`
 - Django admin: `http://localhost:8000/django-admin/`
 - Health: `http://localhost:8000/health/`
+
+## Production deployment
+
+Production is designed for:
+- Django/Wagtail on a VPS behind `nginx + gunicorn`
+- PostgreSQL on the VPS
+- static files served by WhiteNoise
+- uploaded media stored in Cloudflare R2 or another S3-compatible bucket
+
+Key production files:
+- `.env.production.example`
+- `deploy/bootstrap_vps.sh`
+- `deploy/deploy_cms.sh`
+- `deploy/backup_postgres.sh`
+- `deploy/export_local_content.sh`
+- `deploy/import_content.sh`
+- `deploy/sync_media_to_r2.sh`
+- `deploy/lighthouse-labs-cms.service`
+- `deploy/nginx.cms.lighthouse-labs.be.conf`
+
+Suggested first production flow:
+1. Push the repo to GitHub.
+2. Add this machine's SSH key to the VPS.
+3. Run `deploy/bootstrap_vps.sh` as `root` on the VPS.
+4. Clone the repo to `/srv/lighthouse-labs-cms`.
+5. Copy `.env.production.example` to `.env` and fill in real secrets.
+6. Install the systemd and nginx templates from `deploy/`.
+7. Run `deploy/deploy_cms.sh`.
+8. Run `certbot --nginx -d cms.lighthouse-labs.be`.
+
+## Content migration
+
+To promote the current local content into production:
+1. Export local content:
+   ```bash
+   ./deploy/export_local_content.sh
+   ```
+2. Import the JSON dump on the VPS after the production database is ready:
+   ```bash
+   SITE_HOSTNAME=lighthouse-labs.be ./deploy/import_content.sh /path/to/content.json
+   ```
+3. Sync the local `media/` directory to R2:
+   ```bash
+   ./deploy/sync_media_to_r2.sh
+   ```
+4. Create the production superuser:
+   ```bash
+   python manage.py createsuperuser
+   ```

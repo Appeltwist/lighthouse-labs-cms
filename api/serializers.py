@@ -7,54 +7,49 @@ class SiteSerializer(serializers.Serializer):
     hostname = serializers.CharField()
 
 
-class BrandSerializer(serializers.Serializer):
-    colorPrimary = serializers.CharField()
-    colorSecondary = serializers.CharField()
-    colorAccent = serializers.CharField()
-    backgroundColor = serializers.CharField()
-    fontFamily = serializers.CharField()
-    logoUrl = serializers.CharField(allow_blank=True, allow_null=True, required=False)
-
-
-class NavItemSerializer(serializers.Serializer):
-    label = serializers.CharField()
-    href = serializers.CharField()
-    openInNewTab = serializers.BooleanField(default=False)
-
-
-class FooterLinkSerializer(serializers.Serializer):
-    label = serializers.CharField()
-    href = serializers.CharField()
-    openInNewTab = serializers.BooleanField(default=False)
-
-
-class FooterGroupSerializer(serializers.Serializer):
-    title = serializers.CharField()
-    links = FooterLinkSerializer(many=True)
-
-
-class FooterContactSerializer(serializers.Serializer):
-    heading = serializers.CharField(allow_blank=True, allow_null=True)
-    body = serializers.CharField(allow_blank=True, allow_null=True)
-    email = serializers.CharField(allow_blank=True, allow_null=True)
-
-
-class SocialLinkSerializer(serializers.Serializer):
-    label = serializers.CharField()
+class ImageSerializer(serializers.Serializer):
     url = serializers.CharField()
+    title = serializers.CharField(allow_blank=True, allow_null=True)
+    caption = serializers.CharField(allow_blank=True, allow_null=True, required=False)
 
 
-class FooterSerializer(serializers.Serializer):
-    groups = FooterGroupSerializer(many=True)
-    contact = FooterContactSerializer()
-    socials = SocialLinkSerializer(many=True)
+class LinkSerializer(serializers.Serializer):
+    label = serializers.CharField()
+    href = serializers.CharField()
+    openInNewTab = serializers.BooleanField(default=False)
+
+
+class FooterColumnSerializer(serializers.Serializer):
+    title = serializers.CharField()
+    links = LinkSerializer(many=True)
 
 
 class AnnouncementSerializer(serializers.Serializer):
-    label = serializers.CharField(allow_blank=True, allow_null=True)
-    body = serializers.CharField(allow_blank=True, allow_null=True)
+    text = serializers.CharField(allow_blank=True, allow_null=True)
     linkLabel = serializers.CharField(allow_blank=True, allow_null=True)
     linkUrl = serializers.CharField(allow_blank=True, allow_null=True)
+
+
+class ContactSettingsSerializer(serializers.Serializer):
+    email = serializers.CharField(allow_blank=True, allow_null=True)
+    phone = serializers.CharField(allow_blank=True, allow_null=True)
+    address = serializers.CharField(allow_blank=True, allow_null=True)
+    googleMapsLink = serializers.CharField(allow_blank=True, allow_null=True)
+    instagram = serializers.CharField(allow_blank=True, allow_null=True)
+    vimeo = serializers.CharField(allow_blank=True, allow_null=True)
+    linkedin = serializers.CharField(allow_blank=True, allow_null=True)
+
+
+class BrandSerializer(serializers.Serializer):
+    siteName = serializers.CharField()
+    logoUrl = serializers.CharField(allow_blank=True, allow_null=True, required=False)
+    primaryColor = serializers.CharField()
+    secondaryColor = serializers.CharField()
+
+
+class FooterSerializer(serializers.Serializer):
+    columns = FooterColumnSerializer(many=True)
+    socials = LinkSerializer(many=True)
 
 
 class SiteConfigSerializer(serializers.Serializer):
@@ -62,33 +57,29 @@ class SiteConfigSerializer(serializers.Serializer):
     defaultLocale = serializers.CharField()
     locales = serializers.ListField(child=serializers.CharField())
     brand = BrandSerializer()
-    nav = NavItemSerializer(many=True)
+    nav = LinkSerializer(many=True)
     footer = FooterSerializer()
     announcement = AnnouncementSerializer(allow_null=True)
+    contact = ContactSettingsSerializer()
 
 
-class ImageSerializer(serializers.Serializer):
-    url = serializers.CharField()
-    title = serializers.CharField(allow_blank=True, allow_null=True)
+class CtaSerializer(serializers.Serializer):
+    label = serializers.CharField(allow_blank=True, allow_null=True)
+    href = serializers.CharField(allow_blank=True, allow_null=True)
+
+
+class HeroMediaSerializer(serializers.Serializer):
+    type = serializers.CharField()
+    image = ImageSerializer(allow_null=True, required=False)
+    videoUrl = serializers.CharField(allow_blank=True, allow_null=True, required=False)
 
 
 class HeroSerializer(serializers.Serializer):
-    eyebrow = serializers.CharField(allow_blank=True, allow_null=True, required=False)
     title = serializers.CharField(allow_blank=True, allow_null=True)
-    body = serializers.CharField(allow_blank=True, allow_null=True)
-    image = ImageSerializer(allow_null=True, required=False)
-
-
-class IntroSerializer(serializers.Serializer):
-    heading = serializers.CharField(allow_blank=True, allow_null=True)
-    body = serializers.CharField(allow_blank=True, allow_null=True)
-
-
-class FeaturedTileSerializer(serializers.Serializer):
-    title = serializers.CharField()
-    description = serializers.CharField()
-    ctaLabel = serializers.CharField()
-    ctaHref = serializers.CharField()
+    subtitle = serializers.CharField(allow_blank=True, allow_null=True)
+    media = HeroMediaSerializer(allow_null=True, required=False)
+    primaryCta = CtaSerializer(allow_null=True, required=False)
+    secondaryCta = CtaSerializer(allow_null=True, required=False)
 
 
 class SeoSerializer(serializers.Serializer):
@@ -96,32 +87,150 @@ class SeoSerializer(serializers.Serializer):
     description = serializers.CharField(allow_blank=True, allow_null=True)
 
 
-class StreamBlockSerializer(serializers.Serializer):
+class PersonSummarySerializer(serializers.Serializer):
+    name = serializers.CharField()
+    slug = serializers.CharField()
+    hasPublicProfile = serializers.BooleanField()
+    role = serializers.CharField(allow_blank=True, allow_null=True)
+    shortBio = serializers.CharField(allow_blank=True, allow_null=True)
+    profileImage = ImageSerializer(allow_null=True, required=False)
+    href = serializers.CharField(allow_blank=True, allow_null=True, required=False)
+
+
+class ProjectSummarySerializer(serializers.Serializer):
+    title = serializers.CharField()
+    slug = serializers.CharField()
+    hasPublicPage = serializers.BooleanField()
+    catalogSection = serializers.CharField(allow_blank=True, allow_null=True)
+    type = serializers.CharField(allow_blank=True, allow_null=True)
+    year = serializers.CharField(allow_blank=True, allow_null=True)
+    directors = serializers.CharField(allow_blank=True, allow_null=True)
+    listingSummary = serializers.CharField(allow_blank=True, allow_null=True)
+    roles = serializers.CharField(allow_blank=True, allow_null=True)
+    shortDescription = serializers.CharField(allow_blank=True, allow_null=True)
+    coverImage = ImageSerializer(allow_null=True, required=False)
+    href = serializers.CharField(allow_blank=True, allow_null=True, required=False)
+
+
+class ProjectCreditSerializer(serializers.Serializer):
+    role = serializers.CharField()
+    value = serializers.CharField(allow_blank=True, allow_null=True)
+    person = PersonSummarySerializer(allow_null=True, required=False)
+
+
+class ProjectMetadataSerializer(serializers.Serializer):
+    format = serializers.CharField(allow_blank=True, allow_null=True)
+    directors = serializers.CharField(allow_blank=True, allow_null=True)
+    productionYear = serializers.CharField(allow_blank=True, allow_null=True)
+    productionCountries = serializers.CharField(allow_blank=True, allow_null=True)
+    languages = serializers.CharField(allow_blank=True, allow_null=True)
+
+
+class PersonDetailSerializer(PersonSummarySerializer):
+    profileIntro = serializers.CharField(allow_blank=True, allow_null=True)
+    primaryCta = CtaSerializer(allow_null=True, required=False)
+    fullBio = serializers.CharField(allow_blank=True, allow_null=True)
+    sections = serializers.ListField(child=serializers.JSONField(), required=False)
+    links = serializers.ListField(child=serializers.DictField(), required=False)
+    relatedProjects = ProjectSummarySerializer(many=True)
+
+
+class ProjectDetailSerializer(ProjectSummarySerializer):
+    metadata = ProjectMetadataSerializer()
+    synopsis = serializers.CharField(allow_blank=True, allow_null=True)
+    fullDescription = serializers.ListField(child=serializers.JSONField())
+    gallery = ImageSerializer(many=True)
+    videoEmbed = serializers.CharField(allow_blank=True, allow_null=True)
+    collaborators = PersonSummarySerializer(many=True)
+    credits = ProjectCreditSerializer(many=True)
+    externalLinks = LinkSerializer(many=True)
+
+
+class RichTextSectionSerializer(serializers.Serializer):
     type = serializers.CharField()
-    value = serializers.JSONField()
+    heading = serializers.CharField(allow_blank=True, allow_null=True)
+    body = serializers.CharField(allow_blank=True, allow_null=True, required=False)
+    intro = serializers.CharField(allow_blank=True, allow_null=True, required=False)
+    items = serializers.ListField(child=serializers.JSONField(), required=False)
+    caption = serializers.CharField(allow_blank=True, allow_null=True, required=False)
+    images = serializers.ListField(child=serializers.JSONField(), required=False)
+    cta = CtaSerializer(allow_null=True, required=False)
+    projects = ProjectSummarySerializer(many=True, required=False)
 
 
 class HomeSerializer(serializers.Serializer):
-    site = SiteSerializer()
     locale = serializers.CharField()
     hero = HeroSerializer()
-    intro = IntroSerializer()
-    featuredTiles = FeaturedTileSerializer(many=True)
-    sections = StreamBlockSerializer(many=True)
+    sections = serializers.ListField(child=serializers.JSONField())
     seo = SeoSerializer()
 
 
-class PrimaryCtaSerializer(serializers.Serializer):
-    label = serializers.CharField(allow_blank=True, allow_null=True)
-    url = serializers.CharField(allow_blank=True, allow_null=True)
-
-
-class NarrativePageSerializer(serializers.Serializer):
+class AboutPageSerializer(serializers.Serializer):
     routeKey = serializers.CharField()
     locale = serializers.CharField()
     title = serializers.CharField()
-    subtitle = serializers.CharField(allow_blank=True, allow_null=True)
-    hero = HeroSerializer()
-    sections = StreamBlockSerializer(many=True)
-    primaryCta = PrimaryCtaSerializer(allow_null=True)
+    introTitle = serializers.CharField(allow_blank=True, allow_null=True)
+    introText = serializers.CharField(allow_blank=True, allow_null=True)
+    introImage = ImageSerializer(allow_null=True, required=False)
+    services = RichTextSectionSerializer(many=True)
+    studiosEquipment = RichTextSectionSerializer(many=True)
+    teamMembers = PersonSummarySerializer(many=True)
+    seo = SeoSerializer()
+
+
+class SpaceOfferingSerializer(serializers.Serializer):
+    title = serializers.CharField()
+    description = serializers.CharField(allow_blank=True, allow_null=True)
+    dailyRate = serializers.CharField(allow_blank=True, allow_null=True)
+    hourlyRate = serializers.CharField(allow_blank=True, allow_null=True)
+    capacity = serializers.CharField(allow_blank=True, allow_null=True)
+    area = serializers.CharField(allow_blank=True, allow_null=True)
+    includedFeatures = serializers.CharField(allow_blank=True, allow_null=True)
+    extraServices = serializers.CharField(allow_blank=True, allow_null=True)
+
+
+class SpaceSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    slug = serializers.CharField()
+    shortDescription = serializers.CharField(allow_blank=True, allow_null=True)
+    mainImage = ImageSerializer(allow_null=True, required=False)
+    gallery = ImageSerializer(many=True)
+    area = serializers.CharField(allow_blank=True, allow_null=True)
+    capacity = serializers.CharField(allow_blank=True, allow_null=True)
+    equipment = serializers.CharField(allow_blank=True, allow_null=True)
+    offerings = SpaceOfferingSerializer(many=True)
+    bookingCta = CtaSerializer(allow_null=True, required=False)
+
+
+class SpacesPageSerializer(serializers.Serializer):
+    routeKey = serializers.CharField()
+    locale = serializers.CharField()
+    title = serializers.CharField()
+    introText = serializers.CharField(allow_blank=True, allow_null=True)
+    spaces = SpaceSerializer(many=True)
+    seo = SeoSerializer()
+
+
+class ProjectSectionSerializer(serializers.Serializer):
+    title = serializers.CharField()
+    intro = serializers.CharField(allow_blank=True, allow_null=True)
+    projects = ProjectSummarySerializer(many=True)
+
+
+class ProjectsPageSerializer(serializers.Serializer):
+    routeKey = serializers.CharField()
+    locale = serializers.CharField()
+    title = serializers.CharField()
+    introText = serializers.CharField(allow_blank=True, allow_null=True)
+    sections = ProjectSectionSerializer(many=True)
+    seo = SeoSerializer()
+
+
+class ContactPageSerializer(serializers.Serializer):
+    routeKey = serializers.CharField()
+    locale = serializers.CharField()
+    title = serializers.CharField()
+    introText = serializers.CharField(allow_blank=True, allow_null=True)
+    formEmbed = serializers.CharField(allow_blank=True, allow_null=True)
+    mapEmbed = serializers.CharField(allow_blank=True, allow_null=True)
     seo = SeoSerializer()
