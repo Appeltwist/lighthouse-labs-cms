@@ -25,6 +25,7 @@ from pages.models import (
     Person,
     Project,
     ProjectsPage,
+    Space,
     SpacesPage,
 )
 from siteconfig.models import BrandSettings, ContactSettings, SiteChromeSettings
@@ -171,6 +172,31 @@ def _seo_payload(page, locale: str):
         "title": _localized_text(page, "seo_title_override", locale),
         "description": _localized_text(page, "seo_description_override", locale),
     }
+
+
+def _resolve_space_image_from_href(site, href, request):
+    target = _clean_optional(href)
+    if not target:
+        return None
+
+    parsed = urlsplit(target)
+    path = _clean_optional(parsed.path).strip("/")
+    if path not in {"spaces", "fr/spaces", "en/spaces"}:
+        return None
+
+    slug = _clean_optional(parsed.fragment)
+    if not slug:
+        return None
+
+    space = Space.objects.filter(slug=slug).first()
+    if space is None:
+        return None
+
+    spaces_page = SpacesPage.objects.child_of(site.root_page).live().first()
+    if spaces_page is None or not spaces_page.spaces.filter(space=space).exists():
+        return None
+
+    return _image_payload(space.main_image, request)
 
 
 def _site_payload(site, brand):
@@ -382,12 +408,31 @@ def _serialize_rich_content_blocks(stream_value, request, locale: str):
     return sections
 
 
-def _serialize_home_blocks(stream_value, request, locale: str):
+def _serialize_home_blocks(stream_value, request, locale: str, site):
     sections = []
     for block in stream_value or []:
         value = block.value
         if block.block_type in {"feature_grid", "gallery", "cta_band"}:
-            sections.extend(_serialize_rich_content_blocks([block], request, locale))
+            if block.block_type == "feature_grid":
+                sections.append(
+                    {
+                        "type": "feature_grid",
+                        "heading": _clean_optional(value.get("heading")),
+                        "intro": _clean_optional(value.get("intro")),
+                        "items": [
+                            {
+                                "title": _clean_optional(item.get("title")),
+                                "description": _clean_optional(item.get("description")),
+                                "image": _resolve_space_image_from_href(site, item.get("href"), request)
+                                or _image_payload(item.get("image"), request),
+                                "href": _clean_optional(item.get("href")),
+                            }
+                            for item in value.get("items", [])
+                        ],
+                    }
+                )
+            else:
+                sections.extend(_serialize_rich_content_blocks([block], request, locale))
         elif block.block_type == "highlight_strip":
             sections.append(
                 {
@@ -502,7 +547,7 @@ def _serialize_person_profile_blocks(stream_value, request, locale: str):
     return sections
 
 
-def _serialize_home(home_page, request, locale: str):
+def _serialize_home(home_page, request, locale: str, site):
     media = None
     if _clean_optional(home_page.hero_video_url):
         media = {
@@ -531,7 +576,7 @@ def _serialize_home(home_page, request, locale: str):
                 home_page.secondary_cta_link,
             ),
         },
-        "sections": _serialize_home_blocks(home_page.translated("body", locale), request, locale),
+        "sections": _serialize_home_blocks(home_page.translated("body", locale), request, locale, site),
         "seo": _seo_payload(home_page, locale),
     }
 
@@ -707,7 +752,7 @@ class HomeAPIView(APIView):
         brand = _resolve_brand(site)
         home_page = _resolve_home_page(site)
         locale = _resolve_locale(request, default_locale=brand.default_locale, supported_locales=brand.supported_locales)
-        payload = _serialize_home(home_page, request, locale)
+        payload = _serialize_home(home_page, request, locale, site)
         serializer = HomeSerializer(payload)
         return Response(serializer.data)
 

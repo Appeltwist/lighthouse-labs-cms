@@ -1,10 +1,14 @@
+from io import BytesIO
 from urllib.parse import urlparse
 
 from django.core.management import call_command
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
+from PIL import Image as PilImage
+from wagtail.images import get_image_model
 from wagtail.models import Site
 
-from pages.models import AboutPage, ContactPage, HomePage, Person, Project, ProjectsPage, SpacesPage
+from pages.models import AboutPage, ContactPage, HomePage, Person, Project, ProjectsPage, Space, SpacesPage
 from siteconfig.models import BrandSettings, ContactSettings, SiteChromeSettings
 
 
@@ -47,6 +51,26 @@ class LighthouseLabsApiTests(TestCase):
         self.assertIn("highlight_strip", section_types)
         self.assertGreaterEqual(section_types.count("gallery"), 2)
         self.assertNotIn("project_highlights", section_types)
+
+    def test_home_space_feature_grid_uses_current_space_image(self):
+        light_lab = Space.objects.get(slug="light-lab-studio")
+        image_buffer = BytesIO()
+        PilImage.new("RGB", (12, 12), color=(210, 140, 90)).save(image_buffer, format="PNG")
+        image_buffer.seek(0)
+        replacement = get_image_model().objects.create(
+            title="Replacement Space Image",
+            file=SimpleUploadedFile("replacement-space.png", image_buffer.read(), content_type="image/png"),
+        )
+        light_lab.main_image = replacement
+        light_lab.save(update_fields=["main_image"])
+
+        response = self.client.get("/api/home", {"domain": "lighthouse-labs.local", "locale": "fr"})
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+
+        feature_grid = next(section for section in payload["sections"] if section["type"] == "feature_grid")
+        light_lab_item = next(item for item in feature_grid["items"] if item["href"] == "/spaces#light-lab-studio")
+        self.assertTrue(light_lab_item["image"]["url"].endswith(replacement.file.url))
 
     def test_about_page_is_translated_in_english_and_french(self):
         fr_response = self.client.get("/api/pages/about", {"domain": "lighthouse-labs.local", "locale": "fr"})
